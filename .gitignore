@@ -18,6 +18,41 @@ env/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# Media files (uploaded images and results)
+backend/media/
+media/
+*/media/
+uploads/
+*/uploads/
+
+# ML Model files (usually large, store separately or use Git LFS)
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+*.model
+*/ml_models/
+api/ml_models/
+
+# Test files (optional - you can keep these if you want)
+test_*.py
+*_test.py
+
+# Generated/annotated images
+annotated_images/
+*/annotated_images/
+
+# Django migrations (optional - some prefer to include these)
+# */migrations/
+# !*/migrations/__init__.py
+
 # Environment variables
 .env
 .env.local

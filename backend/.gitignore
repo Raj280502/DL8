@@ -1,0 +1,41 @@
+# Backend specific gitignore
+
+# Database
+db.sqlite3
+*.db
+*.sqlite
+
+# Media files (uploaded scans and results)
+media/
+*/media/
+
+# ML Models (too large for Git)
+api/ml_models/*.pt
+api/ml_models/*.pth
+api/ml_models/*.h5
+api/ml_models/*.pkl
+*.pt
+*.pth
+*.h5
+*.pkl
+
+# Test files
+test_*.py
+*_test.py
+
+# Django stuff
+*.log
+local_settings.py
+
+# Migration files (optional)
+# */migrations/0*.py
+# !*/migrations/__init__.py
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+.env
+.env.local
