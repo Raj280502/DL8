@@ -33,7 +33,7 @@ const HeroSlider = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden hero-gradient bg-[hsl(var(--background))]">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
@@ -43,7 +43,7 @@ const HeroSlider = () => {
           {/* Background Image */}
           <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
           {/* Overlay */}
-          <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex flex-col justify-center items-center text-white text-center p-4">
+          <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex flex-col justify-center items-center text-[hsl(var(--foreground))] text-center p-4">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">{slide.title}</h1>
             <p className="text-lg md:text-2xl">{slide.subtitle}</p>
           </div>
@@ -56,7 +56,7 @@ const HeroSlider = () => {
         <div className="absolute bottom-24">
             <Link
             to="/dashboard"
-            className="bg-blue-600 text-white font-bold text-lg px-8 py-4 rounded-full hover:bg-blue-700 transition-transform duration-300 hover:scale-105"
+            className="font-bold text-lg px-8 py-4 rounded-full transition-all duration-300 hover:scale-105 shadow-lg medical-gradient text-[hsl(var(--primary-foreground))] glow-primary"
           >
             Get Started Now
           </Link>
