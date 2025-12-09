@@ -3,13 +3,17 @@ import DetectionsView from '../components/dashboard/DetectionsView';
 import FileUploadView from '../components/dashboard/FileUploadView';
 import ResultsView from '../components/dashboard/ResultsView';
 
-// We can define ReportsView here or move it to its own file if it becomes complex
 const ReportsView = () => (
     <div>
-        <h1 className="text-3xl font-bold text-gray-800">Reports</h1>
-        <p className="mt-4 text-gray-600">All generated reports will be available here.</p>
+        <h1 className="text-3xl font-bold">Reports</h1>
+        <p className="mt-4 text-muted-foreground">All generated reports will be available here.</p>
     </div>
 );
+
+const menuItems = [
+    { key: 'detections', label: 'Detections', description: 'Run AI-powered analyses across imaging modalities.' },
+    { key: 'report', label: 'Reports', description: 'Review exported summaries and historical findings.' },
+];
 
 const DashboardPage = () => {
     const [currentView, setCurrentView] = useState({
@@ -18,12 +22,14 @@ const DashboardPage = () => {
         resultData: null,
     });
 
+    const setPage = (page) => setCurrentView({ page, selectedModel: null, resultData: null });
+
     const handleAnalysisComplete = (data) => {
-        setCurrentView({ ...currentView, resultData: data });
+        setCurrentView((prev) => ({ ...prev, resultData: data }));
     };
-    
+
     const handleBackToUpload = () => {
-        setCurrentView({ ...currentView, resultData: null });
+        setCurrentView((prev) => ({ ...prev, resultData: null }));
     };
 
     const renderMainContent = () => {
@@ -34,31 +40,58 @@ const DashboardPage = () => {
                 return <ResultsView resultData={resultData} onBack={handleBackToUpload} />;
             }
             if (selectedModel) {
-                return <FileUploadView model={selectedModel} onBack={() => setCurrentView({ ...currentView, selectedModel: null })} onAnalysisComplete={handleAnalysisComplete} />;
+                return (
+                    <FileUploadView
+                        model={selectedModel}
+                        onBack={() => setCurrentView((prev) => ({ ...prev, selectedModel: null }))}
+                        onAnalysisComplete={handleAnalysisComplete}
+                    />
+                );
             }
-            return <DetectionsView onSelectModel={(model) => setCurrentView({ ...currentView, selectedModel: model })} />;
+            return <DetectionsView onSelectModel={(model) => setCurrentView((prev) => ({ ...prev, selectedModel: model }))} />;
         }
+
         if (page === 'report') {
             return <ReportsView />;
         }
+
+        return null;
     };
 
     return (
-        <div className="pt-20 min-h-screen bg-gray-100 flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white shadow-md flex-shrink-0">
-                <div className="p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-6">Menu</h2>
-                    <nav>
-                        <ul>
-                            <li><button onClick={() => setCurrentView({ page: 'detections', selectedModel: null, resultData: null })} className={`w-full text-left py-2 px-4 rounded font-semibold ${currentView.page === 'detections' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}>Detections</button></li>
-                            <li className="mt-2"><button onClick={() => setCurrentView({ page: 'report', selectedModel: null, resultData: null })} className={`w-full text-left py-2 px-4 rounded font-semibold ${currentView.page === 'report' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-200'}`}>Report</button></li>
-                        </ul>
+        <div className="bg-background">
+            <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col gap-6 px-6 py-12 lg:flex-row">
+                <aside className="rounded-3xl border border-border/70 bg-card/60 p-6 shadow-sm lg:w-72">
+                    <h2 className="text-lg font-semibold">Workspace</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Navigate analysis pipelines and review key reports.
+                    </p>
+                    <nav className="mt-6 space-y-2">
+                        {menuItems.map((item) => {
+                            const isActive = currentView.page === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => setPage(item.key)}
+                                    className={`w-full rounded-2xl border px-4 py-3 text-left transition-all ${
+                                        isActive
+                                            ? 'border-primary/60 bg-primary/10 text-primary shadow-md'
+                                            : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground'
+                                    }`}
+                                >
+                                    <p className="text-sm font-semibold">{item.label}</p>
+                                    <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+                                </button>
+                            );
+                        })}
                     </nav>
-                </div>
-            </aside>
-            {/* Main Content */}
-            <main className="flex-1 p-10">{renderMainContent()}</main>
+                </aside>
+
+                <main className="flex-1 rounded-3xl border border-border/70 bg-card/40 p-8 shadow-sm backdrop-blur">
+                    {renderMainContent()}
+                </main>
+            </div>
         </div>
     );
 };

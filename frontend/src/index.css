@@ -1,2 +1,107 @@
 @import "tailwindcss";
-@import "./styles/brain-theme.css";
+
+@layer base {
+	:root {
+		--background: 250 35% 8%;
+		--foreground: 250 10% 98%;
+
+		--card: 248 30% 12%;
+		--card-foreground: 250 10% 98%;
+
+		--popover: 248 30% 12%;
+		--popover-foreground: 250 10% 98%;
+
+		--primary: 265 85% 60%;
+		--primary-foreground: 250 10% 98%;
+
+		--secondary: 240 60% 50%;
+		--secondary-foreground: 250 10% 98%;
+
+		--muted: 248 25% 16%;
+		--muted-foreground: 250 15% 65%;
+
+		--accent: 280 75% 65%;
+		--accent-foreground: 250 35% 8%;
+
+		--destructive: 0 75% 55%;
+		--destructive-foreground: 250 10% 98%;
+
+		--border: 248 25% 18%;
+		--input: 248 25% 18%;
+		--ring: 265 85% 60%;
+
+		--radius: 0.75rem;
+
+		--medical-gradient: linear-gradient(135deg, hsl(265 85% 60%), hsl(280 75% 65%));
+		--card-gradient: linear-gradient(145deg, hsl(248 30% 12%), hsl(248 30% 15%));
+		--hero-gradient: linear-gradient(180deg, hsl(248 30% 12%), hsl(250 35% 8%));
+		--glow-primary: 0 0 30px hsl(265 85% 60% / 0.4);
+		--glow-accent: 0 0 25px hsl(280 75% 65% / 0.3);
+	}
+}
+
+@layer base {
+		* {
+			border-color: hsl(var(--border));
+		}
+
+		body {
+			background-color: hsl(var(--background));
+			color: hsl(var(--foreground));
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+			font-feature-settings: "cv11", "ss01";
+		}
+
+	html {
+		scroll-behavior: smooth;
+	}
+}
+
+@layer utilities {
+	.medical-gradient {
+		background: var(--medical-gradient);
+	}
+
+	.card-gradient {
+		background: var(--card-gradient);
+	}
+
+	.hero-gradient {
+		background: var(--hero-gradient);
+	}
+
+	.glow-primary {
+		box-shadow: var(--glow-primary);
+	}
+
+	.glow-accent {
+		box-shadow: var(--glow-accent);
+	}
+
+		.hover\:glow-primary:hover {
+			box-shadow: var(--glow-primary);
+		}
+
+		.hover\:glow-accent:hover {
+			box-shadow: var(--glow-accent);
+		}
+
+	.animate-pulse-slow {
+		animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	.animate-float {
+		animation: float 6s ease-in-out infinite;
+	}
+
+	@keyframes float {
+		0%,
+		100% {
+			transform: translateY(0px);
+		}
+		50% {
+			transform: translateY(-20px);
+		}
+	}
+}

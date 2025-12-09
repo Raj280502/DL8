@@ -4,29 +4,29 @@ const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="bg-slate-900 text-gray-300">
+        <footer style={{ backgroundColor: '#19183B', color: '#A1C2BD' }}>
             <div className="container mx-auto px-6 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* About Section */}
                     <div>
-                        <h3 className="text-lg font-bold text-white mb-4">AI Diagnostics</h3>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: '#E7F2EF' }}>AI Diagnostics</h3>
                         <p className="text-sm">Pioneering the future of medical technology with AI-driven insights.</p>
                     </div>
 
                     {/* Links */}
                     <div>
-                        <h3 className="text-lg font-bold text-white mb-4">Quick Links</h3>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: '#E7F2EF' }}>Quick Links</h3>
                         <ul className="space-y-2 text-sm">
-                            <li><a href="#" className="hover:text-white">Home</a></li>
-                            <li><a href="#" className="hover:text-white">About</a></li>
-                            <li><a href="#" className="hover:text-white">Services</a></li>
-                            <li><a href="#" className="hover:text-white">Contact</a></li>
+                            <li><a href="#" className="transition-colors duration-300" style={{ color: '#A1C2BD' }} onMouseEnter={(e) => e.target.style.color = '#E7F2EF'} onMouseLeave={(e) => e.target.style.color = '#A1C2BD'}>Home</a></li>
+                            <li><a href="#" className="transition-colors duration-300" style={{ color: '#A1C2BD' }} onMouseEnter={(e) => e.target.style.color = '#E7F2EF'} onMouseLeave={(e) => e.target.style.color = '#A1C2BD'}>About</a></li>
+                            <li><a href="#" className="transition-colors duration-300" style={{ color: '#A1C2BD' }} onMouseEnter={(e) => e.target.style.color = '#E7F2EF'} onMouseLeave={(e) => e.target.style.color = '#A1C2BD'}>Services</a></li>
+                            <li><a href="#" className="transition-colors duration-300" style={{ color: '#A1C2BD' }} onMouseEnter={(e) => e.target.style.color = '#E7F2EF'} onMouseLeave={(e) => e.target.style.color = '#A1C2BD'}>Contact</a></li>
                         </ul>
                     </div>
 
                     {/* Legal */}
                     <div>
-                        <h3 className="text-lg font-bold text-white mb-4">Legal</h3>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: '#E7F2EF' }}>Legal</h3>
                         <ul className="space-y-2 text-sm">
                             <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
                             <li><a href="#" className="hover:text-white">Terms of Service</a></li>

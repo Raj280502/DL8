@@ -6,11 +6,15 @@ import DashboardPage from './pages/Dashboard';
 function App() {
   return (
     <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-      </Routes>
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Routes>
+        </main>
+      </div>
     </BrowserRouter>
   );
 }

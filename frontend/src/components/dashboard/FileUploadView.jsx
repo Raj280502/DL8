@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getModelTypeForAPI } from '../../utils/apiHelpers';
+import { getModelTypeForAPI } from '../../utils/apiHelpers.jsx';
 
 const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -17,6 +17,7 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
         if (!selectedFile) return;
         setIsLoading(true);
         setError('');
+
         const formData = new FormData();
         formData.append('input_file', selectedFile);
         formData.append('model_type', getModelTypeForAPI(model));
@@ -39,19 +40,50 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
 
     return (
         <div>
-            <button onClick={onBack} className="mb-6 text-blue-600 hover:text-blue-800 font-semibold">&larr; Back to Selections</button>
-            <h1 className="text-3xl font-bold text-gray-800">{model}</h1>
-            <p className="mt-4 text-gray-600">Please upload the MRI scan file. Accepted formats: PNG, JPG.</p>
-            <div className="mt-8 p-8 bg-white rounded-lg shadow-md">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center">
-                    <input type="file" id="file-upload" className="hidden" accept=".png,.jpg,.jpeg" onChange={handleFileChange}/>
-                    <label htmlFor="file-upload" className="cursor-pointer bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-md hover:bg-blue-200">Choose File</label>
-                    {selectedFile && <p className="mt-4 text-gray-600">Selected: <strong>{selectedFile.name}</strong></p>}
+            <button
+                type="button"
+                onClick={onBack}
+                className="mb-6 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+                ← Back to selections
+            </button>
+            <h1 className="text-3xl font-bold">{model}</h1>
+            <p className="mt-3 text-muted-foreground">
+                Upload a medical image in PNG or JPG format to begin inference.
+            </p>
+
+            <div className="mt-8 rounded-3xl border border-border/70 bg-background/60 p-8 shadow-sm">
+                <div className="rounded-3xl border-2 border-dashed border-border/60 bg-card/40 p-10 text-center">
+                    <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        accept=".png,.jpg,.jpeg"
+                        onChange={handleFileChange}
+                    />
+                    <label
+                        htmlFor="file-upload"
+                        className="inline-flex cursor-pointer items-center justify-center rounded-full border border-primary/40 bg-primary/10 px-6 py-2 text-sm font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/15"
+                    >
+                        Choose file
+                    </label>
+                    {selectedFile && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            Selected: <span className="font-semibold text-foreground">{selectedFile.name}</span>
+                        </p>
+                    )}
                 </div>
-                {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
-                <div className="mt-6 text-right">
-                    <button onClick={handleAnalyze} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!selectedFile || isLoading}>
-                        {isLoading ? 'Analyzing...' : 'Upload & Analyze'}
+
+                {error && <p className="mt-4 text-center text-sm font-medium text-destructive">{error}</p>}
+
+                <div className="mt-6 flex justify-end">
+                    <button
+                        type="button"
+                        onClick={handleAnalyze}
+                        className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-muted"
+                        disabled={!selectedFile || isLoading}
+                    >
+                        {isLoading ? 'Analyzing…' : 'Upload & Analyze'}
                     </button>
                 </div>
             </div>

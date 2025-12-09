@@ -121,3 +121,6 @@ config/secrets.json
 *.pb
 models/
 checkpoints/
+
+
+alzimerdetection.py
