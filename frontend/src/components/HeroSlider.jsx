@@ -1,67 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // 1. Import Link
+import React, { useEffect, useState } from 'react';
 
+import slideA from '../assets/6afbf7bf-fb8a-46e0-bc5d-fbf32f21b3b8.jpg';
+import slideB from '../assets/bf506dcc-d43d-4891-8e66-f2533447061c.jpg';
+import slideC from '../assets/pov_ medical life.jpg';
+
+// Reuse provided assets to keep all slides local
+const slideD = slideA;
+const slideE = slideB;
 
 const slides = [
   {
-    image: '/images/6afbf7bf-fb8a-46e0-bc5d-fbf32f21b3b8.jpg',
+    image: slideA,
     title: 'Advanced AI Diagnostics',
-    subtitle: 'Detecting critical conditions with unparalleled accuracy.'
+    subtitle: 'Detecting critical conditions with unparalleled accuracy.',
   },
   {
-    image: '/images/bf506dcc-d43d-4891-8e66-f2533447061c.jpg',
+    image: slideB,
     title: 'Pioneering Medical Technology',
-    subtitle: 'Leveraging cutting-edge research for better patient outcomes.'
+    subtitle: 'Cutting-edge research for better patient outcomes.',
   },
   {
-    image: 'data:image/jpeg;base64,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',
-    title: 'Instant Health Insights',
-    subtitle: 'Empowering doctors and patients with real-time data.'
-  }
+    image: slideC,
+    title: 'Neuroanatomy Grounded',
+    subtitle: 'Answers linked to your ingested textbook.',
+  },
+  {
+    image: slideD,
+    title: 'Clinician-Centric',
+    subtitle: 'Designed with workflows for teams and trainees.',
+  },
+  {
+    image: slideE,
+    title: 'Secure & Fast',
+    subtitle: 'HIPAA-aware patterns and sub-second retrievals.',
+  },
 ];
 
-const HeroSlider = () => {
+const HeroSlider = ({ children }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Auto-play slider
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide === slides.length - 1 ? 0 : prevSlide + 1));
-    }, 2000); // Change slide every 2 seconds
-
-    return () => clearInterval(timer); // Cleanup on component unmount
+      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    }, 3200);
+    return () => clearInterval(timer);
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* Slides */}
+    <div className="relative w-full min-h-[85vh] overflow-hidden rounded-3xl border border-border/60 shadow-xl">
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
         >
-          {/* Background Image */}
-          <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
-          {/* Overlay */}
-          <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex flex-col justify-center items-center text-white text-center p-4">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">{slide.title}</h1>
-            <p className="text-lg md:text-2xl">{slide.subtitle}</p>
+          <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/70" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 py-12 text-white">
+            <p className="mb-3 inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide">
+              {slide.title}
+            </p>
+            <p className="text-sm md:text-base text-white/80 max-w-2xl">{slide.subtitle}</p>
           </div>
         </div>
       ))}
 
-      {/* Content over slider */}
-      <div className="relative z-10 flex flex-col justify-center items-center h-full">
-        {/* We keep this div to ensure content alignment, but text is now on slides */}
-        <div className="absolute bottom-24">
-            <Link
-            to="/dashboard"
-            className="font-bold text-lg px-8 py-4 rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
-            style={{ backgroundColor: '#A1C2BD', color: '#19183B' }}
-          >
-            Get Started Now
-          </Link>
+      <div className="relative z-10 flex h-full items-center justify-center px-6 py-12">
+        <div className="max-w-6xl w-full flex flex-col items-center text-center gap-6">
+          {children}
         </div>
+      </div>
+
+      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+        {slides.map((_, idx) => (
+          <span
+            key={idx}
+            className={`h-2 w-2 rounded-full transition-all ${idx === currentSlide ? 'w-6 bg-white' : 'bg-white/50'}`}
+            aria-label={`Slide ${idx + 1}`}
+          />
+        ))}
       </div>
     </div>
   );

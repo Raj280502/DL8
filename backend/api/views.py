@@ -1,11 +1,17 @@
+import logging
+
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import Detection
 from rest_framework import viewsets
 from .models import Detection
 from .serializers import DetectionSerializer
 from .services import predict_brain_tumor, predict_stroke, predict_alzheimer
+from rag.chat import answer_question
+
+logger = logging.getLogger(__name__)
 
 class DetectionViewSet(viewsets.ModelViewSet):
     queryset = Detection.objects.all()
@@ -90,3 +96,19 @@ class DetectionViewSet(viewsets.ModelViewSet):
             # Handle unknown model types
             instance.result = {"message": f"Model type {instance.model_type} not yet implemented."}
             instance.save()
+
+
+class ChatView(APIView):
+    """Simple RAG chat endpoint backed by Pinecone and Hugging Face."""
+
+    def post(self, request):
+        question = request.data.get("question", "").strip()
+        if not question:
+            return Response({"error": "question is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = answer_question(question)
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as exc:
+            logger.exception("ChatView failed")
+            return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

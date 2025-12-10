@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Brain, Activity, Microscope, Shield, ArrowRight } from 'lucide-react';
+import HeroSlider from '../components/HeroSlider';
 
 function Home() {
   const featureCards = [
@@ -69,44 +70,35 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="relative overflow-hidden px-6 py-24 text-center">
-        <div className="absolute inset-0 hero-gradient" aria-hidden="true"></div>
-        <div className="absolute inset-0 opacity-20" aria-hidden="true">
-          <div className="absolute left-8 top-16 h-64 w-64 rounded-full bg-primary/30 blur-3xl animate-pulse-slow"></div>
-          <div
-            className="absolute bottom-16 right-10 h-72 w-72 rounded-full bg-accent/20 blur-3xl animate-pulse-slow"
-            style={{ animationDelay: '1s' }}
-          ></div>
-        </div>
-        <div className="relative mx-auto max-w-5xl">
-          <div className="medical-gradient mx-auto mb-10 inline-flex items-center gap-4 rounded-2xl p-5 shadow-xl glow-primary animate-float">
-            <Brain className="h-12 w-12 text-primary-foreground" />
-            <span className="text-lg font-semibold text-primary-foreground">Clinical AI for Brain Health</span>
+      <section className="px-6 pt-10">
+        <HeroSlider>
+          <div className="flex flex-col items-center gap-5 text-white">
+            <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-5 py-2 text-sm font-semibold tracking-wide shadow-lg">
+              <Brain className="h-5 w-5" />
+              Clinical AI for brain health
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight max-w-4xl">
+              Advanced brain disease detection, now with a live RAG assistant
+            </h1>
+            <p className="max-w-3xl text-base md:text-lg text-white/80">
+              YOLO-powered imaging plus Pinecone-grounded answers from your neuroanatomy textbook. Faster triage, clearer context, clinician-ready.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/dashboard" className="btn-primary px-6 py-3 text-base shadow-lg">
+                Start analyzing
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link to="/dashboard" className="btn-secondary px-6 py-3 text-base">
+                Open Neuro Chat
+              </Link>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 text-xs text-white/80">
+              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">Llama 3.2 8B + Pinecone</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">BGE-small embeddings</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">Neuroanatomy through Clinical Cases</span>
+            </div>
           </div>
-          <h1 className="mb-6 text-5xl font-bold leading-tight md:text-6xl">
-            Advanced Brain Disease Detection,
-            <br className="hidden md:block" /> tailored for medical teams.
-          </h1>
-          <p className="mx-auto mb-10 max-w-3xl text-lg text-muted-foreground md:text-xl">
-            Harness our YOLO-powered diagnostics for early detection of stroke, brain tumors, and Alzheimer&apos;s disease.
-            Deliver timely insights with clinician-grade accuracy.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:glow-primary"
-            >
-              Launch Dashboard
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3 text-lg font-semibold text-foreground transition-colors hover:bg-muted/70"
-            >
-              Explore Features
-            </Link>
-          </div>
-        </div>
+        </HeroSlider>
       </section>
 
       <section className="px-6 py-20">
@@ -122,18 +114,21 @@ function Home() {
           {featureCards.map(({ title, description, icon: Icon, accent, bullets }) => {
             const { cardBorder, iconBg, iconColor } = accentStyles[accent] || accentStyles.primary;
             return (
-            <div
-              key={title}
+              <div
+                key={title}
                 className={`card-gradient rounded-3xl border p-8 shadow-lg transition-all ${cardBorder}`}
               >
-                <div className={`mb-6 w-fit rounded-2xl p-4 transition-all ${iconBg}`}>
+                <div className={`mb-6 w-fit rounded-2xl p-4 ${iconBg}`}>
                   <Icon className={`h-10 w-10 ${iconColor}`} />
                 </div>
                 <h3 className="text-xl font-semibold">{title}</h3>
                 <p className="mt-3 text-sm text-muted-foreground">{description}</p>
-                <ul className="mt-6 space-y-2 text-sm text-muted-foreground/90">
+                <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
                   {bullets.map((line) => (
-                    <li key={line}>• {line}</li>
+                    <li key={line} className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>{line}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -162,21 +157,19 @@ function Home() {
         </div>
       </section>
 
-      <section className="px-6 py-20 text-center">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-3xl font-semibold md:text-4xl">Ready to accelerate diagnosis?</h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Join healthcare professionals using our AI-powered detection suite for better patient outcomes.
-          </p>
-          <Link
-            to="/dashboard"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:glow-primary"
-          >
-            Start analyzing now
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+      <footer className="border-t border-border bg-card/60 px-6 py-10 text-sm text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="text-left">
+            <p className="text-base font-semibold text-foreground">NeuroScan AI</p>
+            <p>Clinical AI for stroke, tumor, and Alzheimer’s screening.</p>
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs md:gap-4">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary font-semibold">HIPAA-aware workflows</span>
+            <span className="rounded-full bg-secondary/10 px-3 py-1 text-secondary-foreground font-semibold">Secure uploads</span>
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-accent-foreground font-semibold">Fast inference</span>
+          </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 }

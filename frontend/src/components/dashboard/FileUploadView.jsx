@@ -27,11 +27,23 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
                 method: 'POST',
                 body: formData,
             });
-            if (!response.ok) throw new Error(`Server responded with ${response.status}`);
-            const data = await response.json();
+
+            const text = await response.text();
+            let data;
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch (parseErr) {
+                data = { error: text || 'Invalid JSON from server' };
+            }
+
+            if (!response.ok) {
+                const detail = data?.error || data?.detail || `Server responded with ${response.status}`;
+                throw new Error(detail);
+            }
+
             onAnalysisComplete(data);
         } catch (err) {
-            setError('Analysis failed. Please try again.');
+            setError(err.message || 'Analysis failed. Please try again.');
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -43,7 +55,7 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
             <button
                 type="button"
                 onClick={onBack}
-                className="mb-6 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                className="mb-6 btn-ghost"
             >
                 ← Back to selections
             </button>
@@ -63,24 +75,35 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
                     />
                     <label
                         htmlFor="file-upload"
-                        className="inline-flex cursor-pointer items-center justify-center rounded-full border border-primary/40 bg-primary/10 px-6 py-2 text-sm font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/15"
+                        className="btn-secondary cursor-pointer px-6 py-2 text-sm"
                     >
                         Choose file
                     </label>
                     {selectedFile && (
-                        <p className="mt-4 text-sm text-muted-foreground">
-                            Selected: <span className="font-semibold text-foreground">{selectedFile.name}</span>
-                        </p>
+                        <div className="mt-4 space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                                Selected: <span className="font-semibold text-foreground">{selectedFile.name}</span>
+                            </p>
+                            <img
+                                src={URL.createObjectURL(selectedFile)}
+                                alt="Preview"
+                                className="mx-auto max-h-48 rounded-xl border border-border/50 object-contain shadow-sm"
+                            />
+                        </div>
                     )}
                 </div>
 
-                {error && <p className="mt-4 text-center text-sm font-medium text-destructive">{error}</p>}
+                {error && (
+                    <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-destructive/10 p-3">
+                        <span className="text-sm font-medium text-destructive">{error}</span>
+                    </div>
+                )}
 
                 <div className="mt-6 flex justify-end">
                     <button
                         type="button"
                         onClick={handleAnalyze}
-                        className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-muted"
+                        className="btn-primary px-6 py-2 text-sm disabled:cursor-not-allowed"
                         disabled={!selectedFile || isLoading}
                     >
                         {isLoading ? 'Analyzing…' : 'Upload & Analyze'}

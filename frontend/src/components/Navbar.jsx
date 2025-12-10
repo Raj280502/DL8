@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Brain, Menu, X } from 'lucide-react';
+import { Brain, Menu, Moon, Sun, X } from 'lucide-react';
 
 const navItems = [
   { name: 'Home', path: '/' },
   { name: 'Dashboard', path: '/dashboard' },
 ];
 
-const Navbar = () => {
+const Navbar = ({ theme = 'light', onToggleTheme }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const isDark = theme === 'dark';
 
   const renderNavLink = (item, compact = false) => (
     <NavLink
@@ -29,7 +31,7 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center justify-between px-6">
+      <div className="container mx-auto flex h-20 min-h-[4.5rem] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3">
           <span className="medical-gradient rounded-lg p-2 shadow-xl glow-primary">
             <Brain className="h-6 w-6 text-primary-foreground" />
@@ -45,9 +47,18 @@ const Navbar = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="btn-secondary px-3 py-2"
+            aria-label="Toggle color theme"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? 'Light mode' : 'Dark mode'}
+          </button>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:glow-primary"
+            className="btn-primary px-4 py-2"
           >
             Access Dashboard
           </Link>
@@ -67,10 +78,21 @@ const Navbar = () => {
         <div className="border-t border-border bg-background px-6 py-4 md:hidden">
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => renderNavLink(item, true))}
+            <button
+              type="button"
+              onClick={() => {
+                onToggleTheme?.();
+              }}
+              className="btn-secondary px-4 py-2"
+              aria-label="Toggle color theme"
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? 'Light mode' : 'Dark mode'}
+            </button>
             <Link
               to="/dashboard"
               onClick={() => setIsMobileOpen(false)}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md"
+              className="mt-2 btn-primary px-4 py-2"
             >
               Access Dashboard
             </Link>

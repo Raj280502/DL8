@@ -11,6 +11,7 @@ django-cors-headers>=4.0.0
 
 # AI/ML Libraries
 tensorflow>=2.13.0
+tf-keras>=2.15.0,<3.0.0
 numpy>=1.24.0
 Pillow>=10.0.0  # PIL for image processing
 opencv-python>=4.8.0  # cv2 for image operations
@@ -27,3 +28,14 @@ matplotlib>=3.7.0  # For plotting and visualization
 # Additional utilities
 python-dotenv>=1.0.0  # Environment variables
 Pillow>=10.0.0  # Updated PIL
+
+# RAG / LLM
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+chromadb>=0.5.5
+sentence-transformers>=3.0.0
+pypdf>=4.0.0
+pinecone>=5.0.0
+langchain-pinecone>=0.1.0
+langchain-huggingface>=0.0.3

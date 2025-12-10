@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import DetectionsView from '../components/dashboard/DetectionsView';
 import FileUploadView from '../components/dashboard/FileUploadView';
 import ResultsView from '../components/dashboard/ResultsView';
+import ChatView from '../components/dashboard/ChatView';
 
 const ReportsView = () => (
     <div>
@@ -12,6 +13,7 @@ const ReportsView = () => (
 
 const menuItems = [
     { key: 'detections', label: 'Detections', description: 'Run AI-powered analyses across imaging modalities.' },
+    { key: 'chat', label: 'Neuro Chat', description: 'Ask neuroanatomy and brain-disease questions.' },
     { key: 'report', label: 'Reports', description: 'Review exported summaries and historical findings.' },
 ];
 
@@ -49,6 +51,10 @@ const DashboardPage = () => {
                 );
             }
             return <DetectionsView onSelectModel={(model) => setCurrentView((prev) => ({ ...prev, selectedModel: model }))} />;
+        }
+
+        if (page === 'chat') {
+            return <ChatView />;
         }
 
         if (page === 'report') {

@@ -4,19 +4,25 @@ import { Activity, Brain, Microscope } from 'lucide-react';
 const DetectionsView = ({ onSelectModel }) => {
     const detectionOptions = [
         {
+            id: 'brain_tumor',
             name: 'Brain Tumor Detection',
-            description: 'Upload an MRI scan to detect tumors and highlight critical regions.',
+            description: 'Upload an MRI scan to detect and localize tumors with bounding boxes.',
             icon: Microscope,
+            status: 'available',
         },
         {
-            name: 'Alzheimer Detection',
-            description: "Analyze scans for early indicators of cognitive decline and memory loss.",
+            id: 'alzheimer',
+            name: "Alzheimer's Detection",
+            description: 'Classify brain MRI scans into dementia stages: Non, Very Mild, Mild, or Moderate.',
             icon: Brain,
+            status: 'available',
         },
         {
+            id: 'stroke',
             name: 'Stroke Detection',
             description: 'Identify ischemic and hemorrhagic strokes using CT or MRI datasets.',
             icon: Activity,
+            status: 'unavailable',
         },
     ];
 
@@ -27,27 +33,46 @@ const DetectionsView = ({ onSelectModel }) => {
                 Select an AI pipeline to begin processing your medical imaging scans.
             </p>
             <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {detectionOptions.map(({ name, description, icon: Icon }) => (
-                    <div
-                        key={name}
-                        className="flex h-full flex-col justify-between rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm transition-transform hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
-                    >
-                        <div>
-                            <div className="mb-5 inline-flex items-center justify-center rounded-2xl bg-primary/10 p-3">
-                                <Icon className="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 className="text-xl font-semibold leading-tight">{name}</h3>
-                            <p className="mt-3 text-sm text-muted-foreground">{description}</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => onSelectModel(name)}
-                            className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 hover:glow-primary"
+                {detectionOptions.map(({ id, name, description, icon: Icon, status }) => {
+                    const isAvailable = status === 'available';
+                    return (
+                        <div
+                            key={id}
+                            className={`flex h-full flex-col justify-between rounded-3xl border p-6 shadow-sm transition-all ${
+                                isAvailable
+                                    ? 'border-border/60 bg-card/70 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg'
+                                    : 'border-border/40 bg-card/40 opacity-60'
+                            }`}
                         >
-                            Select Pipeline
-                        </button>
-                    </div>
-                ))}
+                            <div>
+                                <div className="mb-4 flex items-center justify-between">
+                                    <div className={`inline-flex items-center justify-center rounded-2xl p-3 ${isAvailable ? 'bg-primary/10' : 'bg-muted/50'}`}>
+                                        <Icon className={`h-6 w-6 ${isAvailable ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    {!isAvailable && (
+                                        <span className="rounded-full bg-yellow-500/20 px-2 py-1 text-xs font-medium text-yellow-400">
+                                            Model Missing
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 className="text-xl font-semibold leading-tight">{name}</h3>
+                                <p className="mt-3 text-sm text-muted-foreground">{description}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => isAvailable && onSelectModel(name)}
+                                disabled={!isAvailable}
+                                className={`mt-6 px-4 py-2 text-sm font-semibold transition-transform ${
+                                    isAvailable
+                                        ? 'btn-primary'
+                                        : 'btn-secondary cursor-not-allowed opacity-70'
+                                }`}
+                            >
+                                {isAvailable ? 'Select Pipeline' : 'Coming Soon'}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

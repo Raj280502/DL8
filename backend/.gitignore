@@ -1,5 +1,8 @@
 # Backend specific gitignore
 
+# Environment variables (contains API keys!)
+.env
+
 # Database
 db.sqlite3
 *.db
@@ -8,6 +11,13 @@ db.sqlite3
 # Media files (uploaded scans and results)
 media/
 */media/
+
+# Data files (PDFs, etc.)
+data/
+
+# Python cache
+__pycache__/
+*.py[cod]
 
 # ML Models (too large for Git)
 api/ml_models/*.pt
@@ -18,6 +28,9 @@ api/ml_models/*.pkl
 *.pth
 *.h5
 *.pkl
+
+# Unnecessary scripts
+mon.py
 
 # Test files
 test_*.py

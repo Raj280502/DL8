@@ -122,5 +122,20 @@ config/secrets.json
 models/
 checkpoints/
 
-
+# Unnecessary root files
 alzimerdetection.py
+untitled58.py
+mon.py
+
+# PDF data files (large)
+backend/data/
+
+# Sample images at root (not needed)
+download.jpg
+images1.jpg
+istockphoto-*.jpg
+*.webp
+
+# Documentation that may not be needed
+EXCLUDED_FILES.md
+STROKE_INTEGRATION.md

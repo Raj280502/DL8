@@ -27,7 +27,7 @@ const ResultsView = ({ resultData, onBack }) => {
             <button
                 type="button"
                 onClick={onBack}
-                className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                className="btn-ghost"
             >
                 ← Back to upload
             </button>
@@ -148,9 +148,9 @@ const ResultsView = ({ resultData, onBack }) => {
                                             {Math.round((detection.confidence || 0) * 100)}% confidence
                                         </span>
                                     </div>
-                                                        <p className="mt-2 text-xs text-muted-foreground">
-                                                            Location: ({Math.round(detection.xmin)}, {Math.round(detection.ymin)}) → ({Math.round(detection.xmax)}, {Math.round(detection.ymax)})
-                                                        </p>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        Location: ({Math.round(detection.xmin)}, {Math.round(detection.ymin)}) → ({Math.round(detection.xmax)}, {Math.round(detection.ymax)})
+                                    </p>
                                 </div>
                             ))}
                         </div>
