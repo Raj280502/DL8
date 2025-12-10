@@ -4,6 +4,9 @@ import Navbar from './components/Navbar';
 import ChatWidget from './components/ChatWidget';
 import Home from './pages/Home';
 import DashboardPage from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import RequireAuth from './components/RequireAuth';
 
 function App() {
   const [theme, setTheme] = useState('light');
@@ -34,7 +37,9 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
           </Routes>
         </main>
         <ChatWidget />

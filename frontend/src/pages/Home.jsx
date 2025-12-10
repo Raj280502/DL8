@@ -29,17 +29,17 @@ function Home() {
 
   const accentStyles = {
     primary: {
-      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
+      cardBorder: 'border-border/40 hover:border-slate-300 dark:hover:border-slate-500',
       iconBg: 'bg-primary/10',
       iconColor: 'text-primary',
     },
     secondary: {
-      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
+      cardBorder: 'border-border/40 hover:border-slate-300 dark:hover:border-slate-500',
       iconBg: 'bg-secondary/10',
       iconColor: 'text-secondary',
     },
     accent: {
-      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
+      cardBorder: 'border-border/40 hover:border-slate-300 dark:hover:border-slate-500',
       iconBg: 'bg-accent/10',
       iconColor: 'text-accent',
     },
