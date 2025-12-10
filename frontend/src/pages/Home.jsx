@@ -29,17 +29,17 @@ function Home() {
 
   const accentStyles = {
     primary: {
-      cardBorder: 'border-primary/30 hover:border-primary hover:glow-primary',
+      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
       iconBg: 'bg-primary/10',
       iconColor: 'text-primary',
     },
     secondary: {
-      cardBorder: 'border-secondary/30 hover:border-secondary hover:glow-primary',
+      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
       iconBg: 'bg-secondary/10',
       iconColor: 'text-secondary',
     },
     accent: {
-      cardBorder: 'border-accent/30 hover:border-accent hover:glow-accent',
+      cardBorder: 'border-border/40 hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-slate-600 dark:hover:bg-slate-800/70',
       iconBg: 'bg-accent/10',
       iconColor: 'text-accent',
     },
@@ -80,22 +80,14 @@ function Home() {
             <h1 className="text-4xl md:text-6xl font-bold leading-tight max-w-4xl">
               Advanced brain disease detection, now with a live RAG assistant
             </h1>
-            <p className="max-w-3xl text-base md:text-lg text-white/80">
-              YOLO-powered imaging plus Pinecone-grounded answers from your neuroanatomy textbook. Faster triage, clearer context, clinician-ready.
-            </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link to="/dashboard" className="btn-primary px-6 py-3 text-base shadow-lg">
                 Start analyzing
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link to="/dashboard" className="btn-secondary px-6 py-3 text-base">
+              <Link to="/dashboard" className="px-6 py-3 text-base font-semibold rounded-full bg-white/20 backdrop-blur-sm text-white border-2 border-white/50 hover:bg-white/30 hover:border-white transition-all shadow-lg">
                 Open Neuro Chat
               </Link>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 text-xs text-white/80">
-              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">Llama 3.2 8B + Pinecone</span>
-              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">BGE-small embeddings</span>
-              <span className="rounded-full bg-white/10 px-3 py-1 border border-white/20">Neuroanatomy through Clinical Cases</span>
             </div>
           </div>
         </HeroSlider>

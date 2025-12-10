@@ -50,11 +50,10 @@ const Navbar = ({ theme = 'light', onToggleTheme }) => {
           <button
             type="button"
             onClick={onToggleTheme}
-            className="btn-secondary px-3 py-2"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
             aria-label="Toggle color theme"
           >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            {isDark ? 'Light mode' : 'Dark mode'}
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
           <Link
             to="/dashboard"
@@ -78,17 +77,18 @@ const Navbar = ({ theme = 'light', onToggleTheme }) => {
         <div className="border-t border-border bg-background px-6 py-4 md:hidden">
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => renderNavLink(item, true))}
-            <button
-              type="button"
-              onClick={() => {
-                onToggleTheme?.();
-              }}
-              className="btn-secondary px-4 py-2"
-              aria-label="Toggle color theme"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              {isDark ? 'Light mode' : 'Dark mode'}
-            </button>
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  onToggleTheme?.();
+                }}
+                className="rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+                aria-label="Toggle color theme"
+              >
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+            </div>
             <Link
               to="/dashboard"
               onClick={() => setIsMobileOpen(false)}

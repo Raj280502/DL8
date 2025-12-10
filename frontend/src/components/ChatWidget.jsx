@@ -69,16 +69,16 @@ const ChatWidget = () => {
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
             {open && (
-                <div className="w-[360px] max-w-[90vw] overflow-hidden rounded-2xl border border-border/50 bg-white/95 shadow-2xl backdrop-blur">
-                    <div className="flex items-center justify-between border-b border-border/50 bg-primary/5 px-4 py-3">
+                <div className="w-[380px] max-w-[90vw] overflow-hidden rounded-2xl border-2 border-blue-200 bg-white shadow-2xl">
+                    <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3">
                         <div>
-                            <p className="text-sm font-semibold text-foreground">Neuro Chat</p>
-                            <p className="text-xs text-muted-foreground">Grounded answers from your neuroanatomy PDF</p>
+                            <p className="text-sm font-bold text-white">🧠 Neuro AI Assistant</p>
+                            <p className="text-xs text-blue-100">Ask anything about brain diseases</p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setOpen(false)}
-                            className="rounded-full p-1 text-muted-foreground hover:bg-muted/40"
+                            className="rounded-full p-1.5 text-white/80 hover:bg-white/20 transition-colors"
                             aria-label="Close chat"
                         >
                             <X className="h-4 w-4" />
@@ -138,11 +138,11 @@ const ChatWidget = () => {
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-pulse hover:animate-none ring-4 ring-blue-400/30"
                 aria-label="Open chat"
             >
-                <MessageSquare className="h-4 w-4" />
-                {open ? 'Hide chat' : 'Ask a question'}
+                <MessageSquare className="h-5 w-5" />
+                {open ? 'Hide Chat' : 'Ask AI Assistant'}
             </button>
         </div>
     );

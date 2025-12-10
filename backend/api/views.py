@@ -17,6 +17,17 @@ class DetectionViewSet(viewsets.ModelViewSet):
     queryset = Detection.objects.all()
     serializer_class = DetectionSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Log incoming request data for debugging
+        logger.info(f"Detection create request: {request.data}")
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error(f"Serializer errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer):
         # All of this logic must be indented inside the 'perform_create' method.
         # This method is called by DRF only when a new object is being created (e.g., via a POST request).
