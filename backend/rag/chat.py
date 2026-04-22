@@ -22,9 +22,10 @@ from huggingface_hub import InferenceClient
 # Load environment variables from project root .env if present
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-_DEFAULT_INDEX = "neuro-index"
+_DEFAULT_INDEX = os.getenv("PINECONE_INDEX_NAME", "neuro-index")
 _DEFAULT_NAMESPACE = "neuro"
 _EMBED_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+_PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
 # Use a model available on HF serverless inference
 _LLM_REPO = "HuggingFaceH4/zephyr-7b-beta"
 
@@ -50,7 +51,11 @@ def _embedder() -> HuggingFaceEmbeddings:
 @lru_cache(maxsize=8)
 def _vector_store(index_name: str = _DEFAULT_INDEX, namespace: str = _DEFAULT_NAMESPACE) -> PineconeVectorStore:
     api_key = _require_env(["PINECONE_API_KEY"])
-    pc = Pinecone(api_key=api_key)
+    environment = _PINECONE_ENVIRONMENT
+    if environment:
+        pc = Pinecone(api_key=api_key, environment=environment)
+    else:
+        pc = Pinecone(api_key=api_key)
 
     # Ensure the index exists so the app does not fail on cold start
     existing = [idx.name for idx in pc.list_indexes()]

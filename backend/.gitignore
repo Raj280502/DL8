@@ -1,3 +1,9 @@
+# Python/Django environment
+.env
+db.sqlite3
+__pycache__/
+*.pyc
+media/
 # Backend specific gitignore
 
 # Environment variables (contains API keys!)

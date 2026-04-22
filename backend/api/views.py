@@ -29,15 +29,28 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(request, username=username, password=password)
+        username_or_email = request.data.get('username', '')
+        password = request.data.get('password', '')
+        
+        # Try to authenticate using the provided value as a username
+        user = authenticate(request, username=username_or_email, password=password)
+        
+        # If that fails, try to see if it's an email address
+        if user is None:
+            try:
+                user_obj = User.objects.get(email=username_or_email)
+                user = authenticate(request, username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                pass
+                
         if user is not None:
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'username': user.username
             })
+            
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class UserView(APIView):

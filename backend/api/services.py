@@ -10,9 +10,9 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 import io
 
-# Stroke model imports
-import tensorflow as tf
-from tensorflow.keras.applications.efficientnet import preprocess_input as eff_preprocess
+# Stroke model imports - loaded lazily to avoid startup crashes
+# import tensorflow as tf
+# from tensorflow.keras.applications.efficientnet import preprocess_input as eff_preprocess
 import cv2
 import matplotlib.pyplot as plt
 
@@ -236,6 +236,7 @@ stroke_model = None
 
 def load_stroke_model():
     """Load the stroke classification model"""
+    import tensorflow as tf
     global stroke_model
     if stroke_model is None:
         try:
@@ -295,6 +296,8 @@ def load_stroke_model():
 
 def preprocess_stroke_image(image_path, img_size=(224, 224)):
     """Preprocess image for stroke classification"""
+    import tensorflow as tf
+    from tensorflow.keras.applications.efficientnet import preprocess_input as eff_preprocess
     try:
         # Load and preprocess image
         img = tf.keras.preprocessing.image.load_img(image_path, target_size=img_size)
@@ -307,6 +310,7 @@ def preprocess_stroke_image(image_path, img_size=(224, 224)):
 
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
     """Generate Grad-CAM heatmap for stroke prediction visualization"""
+    import tensorflow as tf
     try:
         # Create gradient model
         grad_model = tf.keras.models.Model(
