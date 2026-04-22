@@ -1,7 +1,6 @@
 """RAG chat service for neuroanatomy QA.
 
-Uses Pinecone for vector search over the ingested PDF and a Hugging Face
-Llama 3.2 8B Instruct endpoint for generation.
+Uses Pinecone for vector search and Groq for fast LLM inference.
 """
 
 from functools import lru_cache
@@ -13,11 +12,10 @@ from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.language_models.llms import LLM
+from langchain_groq import ChatGroq
 from operator import itemgetter
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-from huggingface_hub import InferenceClient
 
 # Load environment variables from project root .env if present
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -26,8 +24,6 @@ _DEFAULT_INDEX = os.getenv("PINECONE_INDEX_NAME", "neuro-index")
 _DEFAULT_NAMESPACE = "neuro"
 _EMBED_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 _PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
-# Use a model available on HF serverless inference
-_LLM_REPO = "HuggingFaceH4/zephyr-7b-beta"
 
 
 def _require_env(keys: List[str]) -> str:
@@ -74,55 +70,26 @@ def _vector_store(index_name: str = _DEFAULT_INDEX, namespace: str = _DEFAULT_NA
     )
 
 
-class _HFChatLLM(LLM):
-    """LLM wrapper using HuggingFace InferenceClient chat_completion API."""
-
-    model: str = _LLM_REPO
-    token: str = ""
-    max_new_tokens: int = 256
-    temperature: float = 0.1
-
-    @property
-    def _llm_type(self) -> str:
-        return "hf_chat"
-
-    def _call(self, prompt: str, stop=None, run_manager=None, **kwargs) -> str:
-        client = InferenceClient(token=self.token)
-        # Use chat_completion with a system message for better control
-        response = client.chat_completion(
-            model=self.model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful medical assistant. Give direct, concise answers. Do not generate follow-up questions or continue the conversation. Just answer the question asked."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=self.max_new_tokens,
-            temperature=self.temperature,
-            stop=["Question:", "Human:", "\n\n\n"],
-        )
-        answer = response.choices[0].message.content
-        # Clean up any trailing artifacts
-        for marker in ["Question:", "Human:", "[/INST]", "[/ASS]"]:
-            if marker in answer:
-                answer = answer.split(marker)[0]
-        return answer.strip()
-
-
 @lru_cache(maxsize=1)
-def _llm() -> _HFChatLLM:
-    token = _require_env([
-        "HUGGINGFACEHUB_API_TOKEN",
-        "HF_TOKEN",
-        "HUGGINGFACE_API_KEY",
-    ])
-    return _HFChatLLM(
-        model=_LLM_REPO,
-        token=token,
-        temperature=0.3,
-        max_new_tokens=512,
-    )
+def _llm() -> ChatGroq:
+    """Get cached Groq LLM instance."""
+    try:
+        api_key = _require_env(["GROQ_API_KEY"])
+        print(f"✅ Found GROQ_API_KEY: {api_key[:10]}...")
+        llm = ChatGroq(
+            api_key=api_key,
+            model="llama-3.1-8b-instant",  # Fast, lightweight, free tier friendly
+            temperature=0.3,
+            max_tokens=512,
+        )
+        print("✅ Groq LLM initialized with llama-3.1-8b-instant")
+        return llm
+    except EnvironmentError as e:
+        print(f"❌ Groq API key not configured: {e}")
+        raise
+    except Exception as e:
+        print(f"❌ Error initializing Groq LLM: {type(e).__name__}: {e}")
+        raise
 
 
 @lru_cache(maxsize=1)
@@ -155,22 +122,39 @@ def answer_question(question: str, index_name: str = _DEFAULT_INDEX, namespace: 
     if not question or not question.strip():
         raise ValueError("Question must not be empty.")
 
-    retriever = _vector_store(index_name, namespace).as_retriever(search_kwargs={"k": 4})
-    docs = retriever.invoke(question)
-    context = _format_docs(docs)
+    try:
+        retriever = _vector_store(index_name, namespace).as_retriever(search_kwargs={"k": 4})
+        docs = retriever.invoke(question)
+        context = _format_docs(docs)
 
-    chain = (
-        {
-            "context": itemgetter("context"),
-            "question": itemgetter("question"),
+        chain = (
+            {
+                "context": itemgetter("context"),
+                "question": itemgetter("question"),
+            }
+            | _prompt()
+            | _llm()
+            | StrOutputParser()
+        )
+
+        answer = chain.invoke({"context": context, "question": question.strip()})
+        return {
+            "answer": answer.strip(),
+            "sources": _format_sources(docs),
         }
-        | _prompt()
-        | _llm()
-        | StrOutputParser()
-    )
+    except Exception as e:
+        error_msg = str(e)
+        error_type = type(e).__name__
 
-    answer = chain.invoke({"context": context, "question": question.strip()})
-    return {
-        "answer": answer.strip(),
-        "sources": _format_sources(docs),
-    }
+        print(f"❌ Chat Error ({error_type}): {error_msg}")
+
+        if "Unauthorized" in error_msg or "401" in error_msg or "API key" in error_msg.lower() or "authentication" in error_msg.lower():
+            return {
+                "answer": f"❌ Groq API Error: {error_msg}\n\n✅ Solution:\n1. Check your Groq API key at https://console.groq.com\n2. Make sure it's not expired\n3. Verify it's in your .env file as: GROQ_API_KEY=\"gsk_...\"\n4. Restart Django server",
+                "sources": ["Groq API Configuration Error"],
+            }
+        else:
+            return {
+                "answer": f"❌ Chat Error: {error_msg}",
+                "sources": ["Error"],
+            }

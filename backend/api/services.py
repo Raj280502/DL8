@@ -16,6 +16,13 @@ import io
 import cv2
 import matplotlib.pyplot as plt
 
+# Report generation
+from .report_generator import (
+    generate_brain_tumor_report,
+    generate_stroke_report,
+    generate_alzheimer_report
+)
+
 # --- Load The YOLOv11 Model Once ---
 try:
     # CORRECTED: Properly join the project's base directory with the relative path to the model
@@ -151,12 +158,20 @@ def predict_brain_tumor(image_path, confidence_threshold=0.4, nms_threshold=0.5)
         
         # Create annotated image with filtered bounding boxes
         annotated_image_path = create_annotated_image(image_path, filtered_predictions)
-        
-        return {
+
+        # Generate medical report
+        prediction_result = {
             "predictions": filtered_predictions,
             "message": f"Detected {len(filtered_predictions)} brain tumor(s)",
             "annotated_image": annotated_image_path
         }
+        try:
+            report = generate_brain_tumor_report(prediction_result)
+            prediction_result["report"] = report
+        except Exception as e:
+            print(f"Error generating brain tumor report: {e}")
+
+        return prediction_result
 
     except Exception as e:
         return {"error": str(e)}
@@ -369,7 +384,52 @@ def create_stroke_visualization(image_path, heatmap, alpha=0.4):
         print(f"Error creating stroke visualization: {e}")
         return None
 
-def predict_stroke(image_path):
+def apply_stroke_fusion(image_probs: dict, clinical_data: dict) -> dict:
+    """
+    Rule-based late fusion for stroke classification: adjust image probabilities
+    using clinical signals (age, risk_factors) without retraining the image model.
+
+    Age interpretation:
+        <50     → Lower stroke risk
+        50-65   → Moderate stroke risk
+        65-75   → Higher stroke risk
+        >75     → Highest stroke risk
+    """
+    import copy
+    probs = copy.deepcopy(image_probs)  # {'Hemorrhagic': 0.x, 'Ischemic': 0.x, 'Normal': 0.x}
+
+    try:
+        age = float(clinical_data.get('age', 60))
+        age = max(0.0, min(120.0, age))
+    except (TypeError, ValueError):
+        return probs
+
+    # Age-based adjustments
+    if age >= 75:
+        probs['Hemorrhagic'] *= 1.25
+        probs['Ischemic'] *= 1.30
+        probs['Normal'] *= 0.70
+    elif age >= 65:
+        probs['Hemorrhagic'] *= 1.15
+        probs['Ischemic'] *= 1.20
+        probs['Normal'] *= 0.85
+    elif age >= 50:
+        probs['Hemorrhagic'] *= 1.05
+        probs['Ischemic'] *= 1.10
+        probs['Normal'] *= 0.95
+    else:  # age < 50
+        probs['Normal'] *= 1.20
+        probs['Ischemic'] *= 0.90
+        probs['Hemorrhagic'] *= 0.85
+
+    # Re-normalise so values sum to 1
+    total = sum(probs.values())
+    if total > 0:
+        probs = {k: v / total for k, v in probs.items()}
+    return probs
+
+
+def predict_stroke(image_path, clinical_data=None):
     """
     Predict stroke classification from brain scan image.
     Returns classification results with confidence scores and Grad-CAM visualization.
@@ -408,21 +468,44 @@ def predict_stroke(image_path):
                 if 'conv' in layer.name.lower():
                     last_conv_layer_name = layer.name
                     break
-            
+
             if last_conv_layer_name:
                 heatmap = make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_class_idx)
                 if heatmap is not None:
                     visualization_path = create_stroke_visualization(image_path, heatmap)
         except Exception as e:
             print(f"Error generating visualization: {e}")
-        
-        return {
+
+        # Apply late fusion if clinical data provided
+        image_only_probs = class_confidences.copy()
+        fusion_applied = False
+        if clinical_data and any(clinical_data.get(k) not in (None, '', 0) for k in ('age',)):
+            fused_probs = apply_stroke_fusion(class_confidences, clinical_data)
+            class_confidences = fused_probs
+            fusion_applied = True
+
+        # Get final predicted class after potential fusion
+        predicted_class = max(class_confidences, key=class_confidences.get)
+        confidence = class_confidences[predicted_class]
+
+        # Generate medical report
+        prediction_result = {
             "predicted_class": predicted_class,
             "confidence": confidence,
             "class_confidences": class_confidences,
+            "image_only_probs": image_only_probs,
             "visualization": visualization_path,
-            "message": f"Stroke classification: {predicted_class} (confidence: {confidence:.2%})"
+            "message": f"Stroke classification: {predicted_class} (confidence: {confidence:.2%})",
+            "fusion_applied": fusion_applied,
+            "clinical_inputs": clinical_data or {},
         }
+        try:
+            report = generate_stroke_report(prediction_result)
+            prediction_result["report"] = report
+        except Exception as e:
+            print(f"Error generating stroke report: {e}")
+
+        return prediction_result
         
     except Exception as e:
         return {"error": str(e)}
@@ -547,7 +630,6 @@ def make_alzheimer_gradcam(model, img_tensor, pred_class_idx, device):
     target_layer = model.features[-1]
     fwd_handle = target_layer.register_forward_hook(_save_activation('target'))
     img_tensor = img_tensor.to(device)
-    img_tensor.requires_grad_(False)
 
     # Forward pass
     model.eval()
@@ -721,12 +803,11 @@ def predict_alzheimer(image_path, clinical_data=None):
         class_names_alz = CLASS_NAMES_ALZ
         image_probs = {name: float(probabilities[0][i].item()) for i, name in enumerate(class_names_alz)}
 
-        # ── Step 2: Grad-CAM (needs gradients, so outside no_grad) ──
-        img_tensor_grad = img_tensor.clone().detach().requires_grad_(True)
+        # ── Step 2: Grad-CAM (hook-based, no input gradients needed) ──
         pred_class_idx  = int(torch.argmax(probabilities, dim=1).item())
         heatmap = None
         try:
-            heatmap = make_alzheimer_gradcam(model, img_tensor_grad, pred_class_idx, device)
+            heatmap = make_alzheimer_gradcam(model, img_tensor, pred_class_idx, device)
         except Exception as gc_err:
             print(f"Grad-CAM skipped: {gc_err}")
 
@@ -759,11 +840,19 @@ def predict_alzheimer(image_path, clinical_data=None):
             "class_confidences": fused_probs,
             "image_only_probs": image_probs,
             "visualization":    visualization_path,
-            "message":          f"Alzheimer\u2019s Assessment: {predicted_class}",
+            "message":          f"Alzheimer's Assessment: {predicted_class}",
             "clinical_note":    severity_messages.get(predicted_class, ''),
             "fusion_applied":   fusion_applied,
             "clinical_inputs":  clinical_data or {},
         }
+
+        # Generate medical report
+        try:
+            report = generate_alzheimer_report(result)
+            result["report"] = report
+        except Exception as e:
+            print(f"Error generating Alzheimer report: {e}")
+
         return result
 
     except Exception as e:

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.http import HttpResponse
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics, serializers
@@ -110,7 +111,19 @@ class DetectionViewSet(viewsets.ModelViewSet):
 
         elif instance.model_type == Detection.ModelTypes.STROKE:
             image_path = instance.input_file.path
-            prediction_result = predict_stroke(image_path)
+
+            # Extract clinical data from request (age) for late fusion
+            clinical_data = None
+            try:
+                import json
+                raw = self.request.data.get('clinical_data', None)
+                if raw:
+                    clinical_data = json.loads(raw) if isinstance(raw, str) else raw
+                    instance.clinical_data = clinical_data
+            except Exception as e:
+                logger.warning(f"Could not parse clinical_data: {e}")
+
+            prediction_result = predict_stroke(image_path, clinical_data=clinical_data)
 
             if 'error' not in prediction_result:
                 instance.result = prediction_result
@@ -164,3 +177,41 @@ class ChatView(APIView):
         except Exception as exc:
             logger.exception("ChatView failed")
             return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ReportDownloadView(APIView):
+    """Download analysis report as text file."""
+
+    def get(self, request, detection_id):
+        try:
+            detection = Detection.objects.get(id=detection_id)
+            result = detection.result or {}
+            report = result.get("report", "")
+
+            if not report:
+                return Response(
+                    {"error": "No report available for this analysis"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Generate filename based on analysis type and timestamp
+            model_type = detection.get_model_type_display()
+            timestamp = detection.created_at.strftime("%Y%m%d_%H%M%S")
+            filename = f"{model_type.replace(' ', '_')}_{timestamp}.txt"
+
+            # Return report as downloadable text file
+            response = HttpResponse(report, content_type='text/plain; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        except Detection.DoesNotExist:
+            return Response(
+                {"error": "Analysis not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error downloading report: {e}")
+            return Response(
+                {"error": "Error downloading report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
