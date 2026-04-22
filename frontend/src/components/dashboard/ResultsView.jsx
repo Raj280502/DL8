@@ -1,7 +1,7 @@
 import React from 'react';
 
 const ResultsView = ({ resultData, onBack }) => {
-    const { result, annotated_image, input_file, model_type } = resultData;
+    const { result, annotated_image, input_file, model_type, detection_id } = resultData;
 
     // Check model types based on result structure
     const isClassification = result?.predicted_class !== undefined;
@@ -21,6 +21,24 @@ const ResultsView = ({ resultData, onBack }) => {
     const displayImage = annotated_image
         ? `http://localhost:8000/media/${annotated_image}`
         : input_file;
+
+    const downloadReport = () => {
+        if (!detection_id || !result?.report) {
+            alert('Report not available');
+            return;
+        }
+
+        // Create a download link for the report
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `${model_type?.replace('_', '-')}-report-${timestamp}.txt`;
+
+        link.href = `http://localhost:8000/api/detections/${detection_id}/report/`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="mx-auto max-w-4xl space-y-6">
@@ -45,8 +63,15 @@ const ResultsView = ({ resultData, onBack }) => {
                 {/* Stroke Classification Results */}
                 {isStrokeClassification && classificationResult && (
                     <div className="mt-8">
-                        <h3 className="text-xl font-semibold">Stroke Classification Result</h3>
-                        <div className="mt-4 rounded-2xl border border-border/50 bg-background/70 p-5">
+                        <div className="flex items-center gap-3 mb-4">
+                            <h3 className="text-xl font-semibold">Stroke Classification Result</h3>
+                            {classificationResult.fusion_applied && (
+                                <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-semibold text-orange-400 border border-orange-500/30">
+                                    🔀 Clinical Fusion Applied
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-2 rounded-2xl border border-border/50 bg-background/70 p-5 space-y-5">
                             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                                 <span className="text-lg font-bold text-foreground">
                                     {classificationResult.predicted_class}
@@ -63,23 +88,65 @@ const ResultsView = ({ resultData, onBack }) => {
                             </div>
                             {classificationResult.class_confidences && (
                                 <div className="space-y-3">
-                                    <h4 className="text-sm font-semibold text-muted-foreground">All Classifications:</h4>
+                                    <h4 className="text-sm font-semibold text-muted-foreground">
+                                        {classificationResult.fusion_applied ? 'Adjusted Probabilities (with Age):' : 'All Classifications:'}
+                                    </h4>
                                     {Object.entries(classificationResult.class_confidences).map(([className, confidence]) => (
                                         <div key={className} className="flex items-center justify-between gap-3">
-                                            <span className="text-sm text-foreground">{className}</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-24 rounded-full bg-muted h-2">
+                                            <span className="text-sm text-foreground w-40 shrink-0">{className}</span>
+                                            <div className="flex flex-1 items-center gap-2">
+                                                <div className="flex-1 rounded-full bg-muted h-2">
                                                     <div
-                                                        className="bg-primary h-2 rounded-full transition-all"
+                                                        className="bg-orange-500 h-2 rounded-full transition-all"
                                                         style={{ width: `${Math.round(confidence * 100)}%` }}
                                                     />
                                                 </div>
-                                                <span className="text-xs text-muted-foreground w-12 text-right">
+                                                <span className="text-xs text-muted-foreground w-10 text-right">
                                                     {Math.round(confidence * 100)}%
                                                 </span>
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* Image-only vs adjusted comparison (when fusion applied) */}
+                            {classificationResult.fusion_applied && classificationResult.image_only_probs && (
+                                <details className="group">
+                                    <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors select-none">
+                                        ▸ Show image-only probabilities (before age adjustment)
+                                    </summary>
+                                    <div className="mt-3 space-y-2 pl-2 border-l-2 border-border/40">
+                                        {Object.entries(classificationResult.image_only_probs).map(([className, confidence]) => (
+                                            <div key={className} className="flex items-center justify-between gap-3">
+                                                <span className="text-xs text-muted-foreground w-40 shrink-0">{className}</span>
+                                                <div className="flex flex-1 items-center gap-2">
+                                                    <div className="flex-1 rounded-full bg-muted h-1.5">
+                                                        <div
+                                                            className="bg-muted-foreground/50 h-1.5 rounded-full"
+                                                            style={{ width: `${Math.round(confidence * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground w-10 text-right">
+                                                        {Math.round(confidence * 100)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </details>
+                            )}
+
+                            {/* Clinical inputs used */}
+                            {classificationResult.fusion_applied && classificationResult.clinical_inputs &&
+                             Object.keys(classificationResult.clinical_inputs).length > 0 && (
+                                <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
+                                    <p className="text-xs font-semibold text-orange-400 mb-2">Clinical inputs used for fusion:</p>
+                                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                        {classificationResult.clinical_inputs.age != null && (
+                                            <span>Age: <strong className="text-foreground">{classificationResult.clinical_inputs.age}</strong></span>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -241,6 +308,26 @@ const ResultsView = ({ resultData, onBack }) => {
                         </p>
                     )}
                 </div>
+
+                {/* Medical Report */}
+                {result?.report && (
+                    <div className="mt-8 rounded-2xl border border-border/60 bg-background/70 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-semibold">📋 Medical Report</h3>
+                            <button
+                                onClick={() => downloadReport()}
+                                className="flex items-center gap-2 rounded-lg bg-primary/20 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/30 transition-colors"
+                            >
+                                ⬇️ Download Report
+                            </button>
+                        </div>
+                        <div className="mt-4 rounded-lg bg-muted/50 p-4 max-h-96 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-mono">
+                                {result.report}
+                            </pre>
+                        </div>
+                    </div>
+                )}
 
                 {/* No Detections Message for Brain Tumor Detection */}
                 {isBrainTumorDetection && predictions.length === 0 && (

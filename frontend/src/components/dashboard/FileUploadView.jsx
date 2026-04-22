@@ -60,7 +60,13 @@ const FileUploadView = ({ model, onBack, onAnalysisComplete }) => {
                 throw new Error(detail);
             }
 
-            onAnalysisComplete(data);
+            // Include model type and detection ID in the result data for report generation
+            const resultWithMetadata = {
+                ...data,
+                model_type: getModelTypeForAPI(model),
+                detection_id: data.id,
+            };
+            onAnalysisComplete(resultWithMetadata);
         } catch (err) {
             setError(err.message || 'Analysis failed. Please try again.');
             console.error(err);
