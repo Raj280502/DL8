@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import UserInfo from './UserInfo';
 import { Link, NavLink } from 'react-router-dom';
 import { Brain, Menu, Moon, Sun, X, MoreVertical, User as UserIcon } from 'lucide-react';
+import { logout as doLogout } from '../utils/apiHelpers.jsx';
 
 const navItems = [
   { name: 'Home', path: '/' },
@@ -13,11 +14,19 @@ const Navbar = ({ theme = 'light', onToggleTheme }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem('access')));
   const navigate = useNavigate();
-  const isAuthenticated = Boolean(localStorage.getItem('access'));
+  const location = useLocation();
+
+  // Re-check auth state on every route change
+  useEffect(() => {
+    setIsAuthenticated(Boolean(localStorage.getItem('access')));
+  }, [location]);
+
   const handleLogout = () => {
     localStorage.removeItem('access');
     localStorage.removeItem('refresh');
+    setIsAuthenticated(false);
     navigate('/login');
   };
 

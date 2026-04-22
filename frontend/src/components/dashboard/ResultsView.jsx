@@ -89,9 +89,18 @@ const ResultsView = ({ resultData, onBack }) => {
                 {/* Alzheimer Classification Results */}
                 {isAlzheimerClassification && classificationResult && (
                     <div className="mt-8">
-                        <h3 className="text-xl font-semibold">Alzheimer Classification Result</h3>
-                        <div className="mt-4 rounded-2xl border border-border/50 bg-background/70 p-5">
-                            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <h3 className="text-xl font-semibold">Alzheimer Classification Result</h3>
+                            {classificationResult.fusion_applied && (
+                                <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-400 border border-purple-500/30">
+                                    🔀 Multimodal Fusion Applied
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="mt-2 rounded-2xl border border-border/50 bg-background/70 p-5 space-y-5">
+                            {/* Prediction + confidence */}
+                            <div className="flex flex-wrap items-center justify-between gap-3">
                                 <span className="text-lg font-bold text-foreground">
                                     {classificationResult.predicted_class}
                                 </span>
@@ -105,20 +114,24 @@ const ResultsView = ({ resultData, onBack }) => {
                                     {Math.round(classificationResult.confidence * 100)}% confidence
                                 </span>
                             </div>
+
+                            {/* Fused probability bars */}
                             {classificationResult.class_confidences && (
                                 <div className="space-y-3">
-                                    <h4 className="text-sm font-semibold text-muted-foreground">All Classifications:</h4>
+                                    <h4 className="text-sm font-semibold text-muted-foreground">
+                                        {classificationResult.fusion_applied ? 'Fused Probabilities (Image + Clinical):' : 'All Classifications:'}
+                                    </h4>
                                     {Object.entries(classificationResult.class_confidences).map(([className, confidence]) => (
                                         <div key={className} className="flex items-center justify-between gap-3">
-                                            <span className="text-sm text-foreground">{className}</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-24 rounded-full bg-muted h-2">
+                                            <span className="text-sm text-foreground w-40 shrink-0">{className}</span>
+                                            <div className="flex flex-1 items-center gap-2">
+                                                <div className="flex-1 rounded-full bg-muted h-2">
                                                     <div
                                                         className="bg-purple-500 h-2 rounded-full transition-all"
                                                         style={{ width: `${Math.round(confidence * 100)}%` }}
                                                     />
                                                 </div>
-                                                <span className="text-xs text-muted-foreground w-12 text-right">
+                                                <span className="text-xs text-muted-foreground w-10 text-right">
                                                     {Math.round(confidence * 100)}%
                                                 </span>
                                             </div>
@@ -126,9 +139,53 @@ const ResultsView = ({ resultData, onBack }) => {
                                     ))}
                                 </div>
                             )}
+
+                            {/* Image-only vs fused comparison (when fusion applied) */}
+                            {classificationResult.fusion_applied && classificationResult.image_only_probs && (
+                                <details className="group">
+                                    <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors select-none">
+                                        ▸ Show image-only probabilities (before clinical adjustment)
+                                    </summary>
+                                    <div className="mt-3 space-y-2 pl-2 border-l-2 border-border/40">
+                                        {Object.entries(classificationResult.image_only_probs).map(([className, confidence]) => (
+                                            <div key={className} className="flex items-center justify-between gap-3">
+                                                <span className="text-xs text-muted-foreground w-40 shrink-0">{className}</span>
+                                                <div className="flex flex-1 items-center gap-2">
+                                                    <div className="flex-1 rounded-full bg-muted h-1.5">
+                                                        <div
+                                                            className="bg-muted-foreground/50 h-1.5 rounded-full"
+                                                            style={{ width: `${Math.round(confidence * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground w-10 text-right">
+                                                        {Math.round(confidence * 100)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </details>
+                            )}
+
+                            {/* Clinical inputs used */}
+                            {classificationResult.fusion_applied && classificationResult.clinical_inputs &&
+                             Object.keys(classificationResult.clinical_inputs).length > 0 && (
+                                <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-3">
+                                    <p className="text-xs font-semibold text-purple-400 mb-2">Clinical inputs used for fusion:</p>
+                                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                        {classificationResult.clinical_inputs.age != null && (
+                                            <span>Age: <strong className="text-foreground">{classificationResult.clinical_inputs.age}</strong></span>
+                                        )}
+                                        {classificationResult.clinical_inputs.mmse_score != null && (
+                                            <span>MMSE Score: <strong className="text-foreground">{classificationResult.clinical_inputs.mmse_score} / 30</strong></span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
+
 
                 {/* Brain Tumor Detection Results */}
                 {isBrainTumorDetection && predictions.length > 0 && (

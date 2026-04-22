@@ -1,6 +1,7 @@
 
 import { User as UserIcon, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { authFetch } from '../utils/apiHelpers.jsx';
 
 export default function UserInfo() {
   const [user, setUser] = useState(null);
@@ -9,9 +10,7 @@ export default function UserInfo() {
   useEffect(() => {
     const token = localStorage.getItem('access');
     if (!token) return;
-    fetch('/api/auth/user/', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
+    authFetch('/api/auth/user/')
       .then(res => res.ok ? res.json() : Promise.reject(res))
       .then(data => setUser(data))
       .catch(() => setError('Could not fetch user info'));

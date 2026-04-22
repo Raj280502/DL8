@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { authFetch } from '../../utils/apiHelpers.jsx';
 
 const ChatView = () => {
     const [question, setQuestion] = useState('');
@@ -30,9 +31,11 @@ const ChatView = () => {
         setMessages((prev) => [...prev, userMessage]);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/chat/', {
+            const response = await authFetch('/api/chat/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({ question: trimmed }),
             });
 

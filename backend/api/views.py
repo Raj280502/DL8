@@ -92,82 +92,60 @@ class DetectionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        # All of this logic must be indented inside the 'perform_create' method.
-        # This method is called by DRF only when a new object is being created (e.g., via a POST request).
-        
-        # --- AI Analysis ---
         # 1. Save the file and initial data
         instance = serializer.save()
-        
+
         # 2. Check the model type and call appropriate prediction service
         if instance.model_type == Detection.ModelTypes.BRAIN_TUMOR:
-            # 3. Get the full path to the uploaded file
             image_path = instance.input_file.path
-            
-            # 4. Call the brain tumor prediction service
             prediction_result = predict_brain_tumor(image_path)
-            
-            # 5. Handle the prediction result
+
             if 'error' not in prediction_result:
-                # Store the predictions
                 instance.result = prediction_result
-                
-                # Store the annotated image path
                 if prediction_result.get('annotated_image'):
                     instance.annotated_image = prediction_result['annotated_image']
-                
-                instance.save()
             else:
-                # Handle prediction error
                 instance.result = prediction_result
-                instance.save()
-                
+            instance.save()
+
         elif instance.model_type == Detection.ModelTypes.STROKE:
-            # Handle stroke detection
             image_path = instance.input_file.path
-            
-            # Call the stroke prediction service
             prediction_result = predict_stroke(image_path)
-            
-            # Handle the prediction result
+
             if 'error' not in prediction_result:
-                # Store the predictions
                 instance.result = prediction_result
-                
-                # Store the visualization path as annotated_image for consistency
                 if prediction_result.get('visualization'):
                     instance.annotated_image = prediction_result['visualization']
-                
-                instance.save()
             else:
-                # Handle prediction error
                 instance.result = prediction_result
-                instance.save()
-        
+            instance.save()
+
         elif instance.model_type == Detection.ModelTypes.ALZHEIMER:
-            # Handle Alzheimer detection
             image_path = instance.input_file.path
-            
-            # Call the Alzheimer prediction service
-            prediction_result = predict_alzheimer(image_path)
-            
-            # Handle the prediction result
+
+            # Extract clinical data from request (age + mmse_score) for late fusion
+            clinical_data = None
+            try:
+                import json
+                raw = self.request.data.get('clinical_data', None)
+                if raw:
+                    clinical_data = json.loads(raw) if isinstance(raw, str) else raw
+                    # Persist clinical data on the instance
+                    instance.clinical_data = clinical_data
+            except Exception as e:
+                logger.warning(f"Could not parse clinical_data: {e}")
+
+            prediction_result = predict_alzheimer(image_path, clinical_data=clinical_data)
+
             if 'error' not in prediction_result:
-                # Store the predictions
                 instance.result = prediction_result
-                
-                # Store the visualization path as annotated_image for consistency
                 if prediction_result.get('visualization'):
                     instance.annotated_image = prediction_result['visualization']
-                
-                instance.save()
             else:
-                # Handle prediction error
                 instance.result = prediction_result
-                instance.save()
-        
+            instance.save()
+
         else:
-            # Handle unknown model types
             instance.result = {"message": f"Model type {instance.model_type} not yet implemented."}
             instance.save()
 

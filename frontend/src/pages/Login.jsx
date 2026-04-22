@@ -26,7 +26,7 @@ export default function Login() {
       }
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError('Network error');
     }

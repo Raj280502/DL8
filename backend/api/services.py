@@ -517,127 +517,255 @@ def preprocess_alzheimer_image(image_path):
         return None
 
 
-def create_alzheimer_visualization(image_path, prediction_info):
-    """Create visualization for Alzheimer prediction with confidence bars"""
+# --- PyTorch Grad-CAM helpers for EfficientNet-B0 ---
+
+_gradcam_gradients = {}
+_gradcam_activations = {}
+
+def _save_gradient(name):
+    def hook(grad):
+        _gradcam_gradients[name] = grad
+    return hook
+
+def _save_activation(name):
+    def hook(module, input, output):
+        _gradcam_activations[name] = output
+    return hook
+
+
+def make_alzheimer_gradcam(model, img_tensor, pred_class_idx, device):
+    """
+    Generate a Grad-CAM heatmap for a PyTorch EfficientNet-B0 model.
+    Hooks into the last convolutional block (features[-1]).
+    Returns a numpy heatmap array (H x W) normalised to [0, 1].
+    """
+    import torch
+    _gradcam_gradients.clear()
+    _gradcam_activations.clear()
+
+    # Register hooks on the last feature block
+    target_layer = model.features[-1]
+    fwd_handle = target_layer.register_forward_hook(_save_activation('target'))
+    img_tensor = img_tensor.to(device)
+    img_tensor.requires_grad_(False)
+
+    # Forward pass
+    model.eval()
+    output = model(img_tensor)           # (1, num_classes)
+
+    # Register backward hook after forward so we capture grads
+    act = _gradcam_activations.get('target')  # (1, C, H, W)
+    if act is None:
+        fwd_handle.remove()
+        return None
+
+    act.retain_grad()
+    bwd_handle = act.register_hook(_save_gradient('target'))
+
+    # Backward on the predicted class
+    model.zero_grad()
+    score = output[0, pred_class_idx]
+    score.backward()
+
+    fwd_handle.remove()
+    bwd_handle.remove()
+
+    grads = _gradcam_gradients.get('target')   # (1, C, H, W)
+    if grads is None:
+        return None
+
+    # Global average pooling over spatial dims
+    weights = grads.squeeze(0).mean(dim=(1, 2))  # (C,)
+    activation = act.squeeze(0)                   # (C, H, W)
+
+    # Weighted combination
+    cam = torch.zeros(activation.shape[1:], device=device)
+    for i, w in enumerate(weights):
+        cam += w * activation[i]
+
+    cam = torch.relu(cam)
+    cam = cam.detach().cpu().numpy()
+
+    # Normalise
+    if cam.max() > 0:
+        cam = cam / cam.max()
+    return cam
+
+
+def create_alzheimer_visualization(image_path, prediction_info, heatmap=None):
+    """Create Grad-CAM heatmap overlay for Alzheimer prediction."""
     try:
-        from PIL import Image, ImageDraw, ImageFont
-        
-        # Open the original image
-        img = Image.open(image_path).convert('RGB')
-        
-        # Resize for consistent display
-        img = img.resize((400, 400))
-        
-        # Create a larger canvas to add text
-        canvas_width = 600
-        canvas_height = 450
-        canvas = Image.new('RGB', (canvas_width, canvas_height), (30, 30, 40))
-        
-        # Paste original image
-        canvas.paste(img, (100, 25))
-        
-        draw = ImageDraw.Draw(canvas)
-        
-        # Try to load font
-        try:
-            font = ImageFont.truetype("arial.ttf", 16)
-            font_small = ImageFont.truetype("arial.ttf", 12)
-        except:
-            font = ImageFont.load_default()
-            font_small = font
-        
-        # Draw prediction result at bottom
-        predicted_class = prediction_info['predicted_class']
-        confidence = prediction_info['confidence']
-        
-        # Color based on severity
-        severity_colors = {
-            'Non Demented': '#4CAF50',      # Green
-            'Very Mild Demented': '#FFC107', # Yellow
-            'Mild Demented': '#FF9800',      # Orange
-            'Moderate Demented': '#F44336'   # Red
-        }
-        color = severity_colors.get(predicted_class, '#FFFFFF')
-        
-        draw.text((100, 435), f"Prediction: {predicted_class} ({confidence:.1%})", fill=color, font=font)
-        
-        # Save visualization
-        base_name = os.path.splitext(os.path.basename(image_path))[0]
-        viz_filename = f"{base_name}_alzheimer_result.jpg"
-        
-        viz_dir = os.path.join(settings.MEDIA_ROOT, 'visualizations')
+        # Read original image via OpenCV for easy overlay
+        img_bgr = cv2.imread(image_path)
+        if img_bgr is None:
+            raise ValueError("cv2 could not read image")
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        h, w = img_rgb.shape[:2]
+
+        if heatmap is not None:
+            # Resize heatmap to image size
+            hm_resized = cv2.resize(heatmap, (w, h))
+            hm_uint8  = np.uint8(255 * hm_resized)
+            hm_color  = cv2.applyColorMap(hm_uint8, cv2.COLORMAP_JET)
+            hm_rgb    = cv2.cvtColor(hm_color, cv2.COLOR_BGR2RGB)
+            overlay   = cv2.addWeighted(img_rgb, 0.55, hm_rgb, 0.45, 0)
+        else:
+            overlay = img_rgb  # fallback: plain image
+
+        # Save
+        base_name    = os.path.splitext(os.path.basename(image_path))[0]
+        viz_filename = f"{base_name}_alzheimer_gradcam.jpg"
+        viz_dir      = os.path.join(settings.MEDIA_ROOT, 'visualizations')
         os.makedirs(viz_dir, exist_ok=True)
-        
-        viz_path = os.path.join(viz_dir, viz_filename)
-        canvas.save(viz_path, 'JPEG', quality=95)
-        
+        viz_path     = os.path.join(viz_dir, viz_filename)
+        cv2.imwrite(viz_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
         return f"visualizations/{viz_filename}"
     except Exception as e:
-        print(f"Error creating Alzheimer visualization: {e}")
+        print(f"Error creating Alzheimer Grad-CAM visualization: {e}")
         return None
 
 
-def predict_alzheimer(image_path):
+# --- Rule-Based Late Fusion ---
+
+CLASS_NAMES_ALZ = ['Mild Demented', 'Moderate Demented', 'Non Demented', 'Very Mild Demented']
+
+def apply_late_fusion(image_probs: dict, clinical_data: dict) -> dict:
+    """
+    Rule-based late fusion: adjust EfficientNet-B0 image probabilities using
+    clinical signals (age, mmse_score) without retraining the image model.
+
+    MMSE interpretation:
+        27-30 → Normal
+        21-26 → Mild impairment
+        10-20 → Moderate impairment
+         0-9  → Severe impairment
+
+    Age weight: probability of more-severe classes increases for patients >75.
+    """
+    import copy
+    probs = copy.deepcopy(image_probs)   # {'Non Demented': 0.x, ...}
+
+    try:
+        age        = float(clinical_data.get('age', 65))
+        mmse       = float(clinical_data.get('mmse_score', 27))
+        mmse       = max(0.0, min(30.0, mmse))
+        age        = max(0.0, min(120.0, age))
+    except (TypeError, ValueError):
+        # Bad input — return image probs unchanged
+        return probs
+
+    # --- MMSE adjustments ---
+    if mmse >= 27:          # Normal range
+        probs['Non Demented']       *= 1.30
+        probs['Very Mild Demented'] *= 0.85
+    elif mmse >= 21:        # Mild impairment
+        probs['Non Demented']       *= 0.75
+        probs['Very Mild Demented'] *= 1.25
+        probs['Mild Demented']      *= 1.20
+    elif mmse >= 10:        # Moderate impairment
+        probs['Non Demented']       *= 0.40
+        probs['Very Mild Demented'] *= 0.70
+        probs['Mild Demented']      *= 1.35
+        probs['Moderate Demented']  *= 1.50
+    else:                   # Severe impairment
+        probs['Non Demented']       *= 0.20
+        probs['Very Mild Demented'] *= 0.40
+        probs['Mild Demented']      *= 0.80
+        probs['Moderate Demented']  *= 2.00
+
+    # --- Age adjustments ---
+    if age >= 80:
+        probs['Moderate Demented']  *= 1.20
+        probs['Mild Demented']      *= 1.10
+        probs['Non Demented']       *= 0.85
+    elif age >= 70:
+        probs['Mild Demented']      *= 1.08
+        probs['Non Demented']       *= 0.95
+    elif age < 55:          # Younger patients: lower prior for severe classes
+        probs['Non Demented']       *= 1.15
+        probs['Moderate Demented']  *= 0.70
+
+    # Re-normalise so values sum to 1
+    total = sum(probs.values())
+    if total > 0:
+        probs = {k: v / total for k, v in probs.items()}
+    return probs
+
+
+def predict_alzheimer(image_path, clinical_data=None):
     """
     Predict Alzheimer's disease stage from brain MRI scan.
-    Returns classification results with confidence scores.
+    Optionally accepts clinical_data dict with 'age' and 'mmse_score'
+    for multimodal late-fusion adjustment.
     """
     import torch
-    
-    # Load model if not already loaded
+
     model = load_alzheimer_model()
     if model is None:
         return {"error": "Alzheimer model not loaded. Please ensure the model file exists."}
-    
+
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
-        # Preprocess image
+
         img_tensor = preprocess_alzheimer_image(image_path)
         if img_tensor is None:
             return {"error": "Failed to preprocess image."}
-        
+
         img_tensor = img_tensor.to(device)
-        
-        # Make prediction
+
+        # ── Step 1: Forward pass to get image-only probabilities ──
         with torch.no_grad():
             outputs = model(img_tensor)
             probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            pred_class_idx = torch.argmax(probabilities, dim=1).item()
-            confidence = probabilities[0][pred_class_idx].item()
-        
-        # Define class names for Alzheimer classification
-        class_names = ['Mild Demented', 'Moderate Demented', 'Non Demented', 'Very Mild Demented']
-        predicted_class = class_names[pred_class_idx]
-        
-        # Get all class confidences
-        class_confidences = {}
-        for i, class_name in enumerate(class_names):
-            class_confidences[class_name] = float(probabilities[0][i].item())
-        
-        # Create visualization
-        prediction_info = {
-            'predicted_class': predicted_class,
-            'confidence': confidence
-        }
-        visualization_path = create_alzheimer_visualization(image_path, prediction_info)
-        
-        # Determine severity message
+
+        class_names_alz = CLASS_NAMES_ALZ
+        image_probs = {name: float(probabilities[0][i].item()) for i, name in enumerate(class_names_alz)}
+
+        # ── Step 2: Grad-CAM (needs gradients, so outside no_grad) ──
+        img_tensor_grad = img_tensor.clone().detach().requires_grad_(True)
+        pred_class_idx  = int(torch.argmax(probabilities, dim=1).item())
+        heatmap = None
+        try:
+            heatmap = make_alzheimer_gradcam(model, img_tensor_grad, pred_class_idx, device)
+        except Exception as gc_err:
+            print(f"Grad-CAM skipped: {gc_err}")
+
+        # ── Step 3: Late Fusion (if clinical data provided) ──
+        fusion_applied = False
+        if clinical_data and any(clinical_data.get(k) not in (None, '', 0) for k in ('age', 'mmse_score')):
+            fused_probs   = apply_late_fusion(image_probs, clinical_data)
+            fusion_applied = True
+        else:
+            fused_probs = image_probs
+
+        # Final prediction from fused probabilities
+        predicted_class = max(fused_probs, key=fused_probs.get)
+        confidence      = fused_probs[predicted_class]
+
+        # ── Step 4: Visualization ──
+        prediction_info   = {'predicted_class': predicted_class, 'confidence': confidence}
+        visualization_path = create_alzheimer_visualization(image_path, prediction_info, heatmap=heatmap)
+
         severity_messages = {
-            'Non Demented': 'No signs of dementia detected. The brain scan appears normal.',
+            'Non Demented':       'No signs of dementia detected. The brain scan appears normal.',
             'Very Mild Demented': 'Very mild cognitive decline detected. Early monitoring recommended.',
-            'Mild Demented': 'Mild dementia indicators present. Clinical consultation advised.',
-            'Moderate Demented': 'Moderate dementia signs detected. Immediate medical attention recommended.'
+            'Mild Demented':      'Mild dementia indicators present. Clinical consultation advised.',
+            'Moderate Demented':  'Moderate dementia signs detected. Immediate medical attention recommended.',
         }
-        
-        return {
-            "predicted_class": predicted_class,
-            "confidence": confidence,
-            "class_confidences": class_confidences,
-            "visualization": visualization_path,
-            "message": f"Alzheimer's Assessment: {predicted_class}",
-            "clinical_note": severity_messages.get(predicted_class, '')
+
+        result = {
+            "predicted_class":  predicted_class,
+            "confidence":       confidence,
+            "class_confidences": fused_probs,
+            "image_only_probs": image_probs,
+            "visualization":    visualization_path,
+            "message":          f"Alzheimer\u2019s Assessment: {predicted_class}",
+            "clinical_note":    severity_messages.get(predicted_class, ''),
+            "fusion_applied":   fusion_applied,
+            "clinical_inputs":  clinical_data or {},
         }
-        
+        return result
+
     except Exception as e:
+        import traceback; traceback.print_exc()
         return {"error": str(e)}

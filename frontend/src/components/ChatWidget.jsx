@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MessageSquare, X } from 'lucide-react';
+import { authFetch } from '../utils/apiHelpers.jsx';
 
 const ChatWidget = () => {
     const [open, setOpen] = useState(false);
@@ -32,9 +33,11 @@ const ChatWidget = () => {
         setMessages((prev) => [...prev, userMessage]);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/chat/', {
+            const response = await authFetch('/api/chat/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({ question: trimmed }),
             });
 

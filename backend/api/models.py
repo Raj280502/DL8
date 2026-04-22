@@ -13,6 +13,7 @@ class Detection(models.Model):
     input_file = models.FileField(upload_to='scans/')
     annotated_image = models.CharField(max_length=500, null=True, blank=True)  # Store path to annotated image
     result = models.JSONField(null=True, blank=True)
+    clinical_data = models.JSONField(null=True, blank=True)  # e.g. {"age": 72, "mmse_score": 18}
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
