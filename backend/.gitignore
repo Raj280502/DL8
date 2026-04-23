@@ -26,10 +26,7 @@ __pycache__/
 *.py[cod]
 
 # ML Models (too large for Git)
-api/ml_models/*.pt
-api/ml_models/*.pth
-api/ml_models/*.h5
-api/ml_models/*.pkl
+
 
 
 # Unnecessary scripts
